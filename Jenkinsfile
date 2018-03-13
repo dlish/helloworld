@@ -14,16 +14,16 @@ node {
         sh "docker build -t $helloworld:$version . --no-cache"
     }
 
-    withCredentials([
-            usernamePassword(credentialsId: 'docker-hub-id', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')
-    ]) {
-        stage('docker publish') {
-            sh "docker login -u $USERNAME -p $PASSWORD"
-            sh "docker push $helloworld:$version"
-        }
-    }
-
     if (isMaster()) {
+        withCredentials([
+                usernamePassword(credentialsId: 'docker-hub-id', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')
+        ]) {
+            stage('docker publish') {
+                sh "docker login -u $USERNAME -p $PASSWORD"
+                sh "docker push $helloworld:$version"
+            }
+        }
+
         // Jenkins commit version to infrastructure repo
         git branch: 'qa', credentialsId: 'bb7477ad-50e9-4a82-8f97-c49d2fa012e5', poll: false, url: 'https://github.com/dlish/helloworld-infrastructure.git'
 
@@ -35,7 +35,6 @@ node {
             usernamePassword(credentialsId: 'bb7477ad-50e9-4a82-8f97-c49d2fa012e5', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
             sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/dlish/helloworld-infrastructure.git qa"
         }
-
     }
 }
 
